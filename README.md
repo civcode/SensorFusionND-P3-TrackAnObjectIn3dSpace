@@ -26,7 +26,7 @@ In this final project, you will implement the missing parts in the schematic. To
   * Windows: recommend using [MinGW](http://www.mingw.org/)
 
 ## External Data
-Download the file <a href="https://pjreddie.com/media/files/yolov3.weights"_blank">yolov3.weights</a> to /dat/yolo (236 MB).
+Download the file <a href="https://pjreddie.com/media/files/yolov3.weights"target="_blank">yolov3.weights</a> to /dat/yolo (236 MB).
 
 ## Basic Build Instructions
 
