@@ -290,15 +290,19 @@ int main(int argc, const char *argv[])
                         showLidarImgOverlay(visImg, currBB->lidarPoints, P_rect_00, R_rect_00, RT, &visImg);
                         cv::rectangle(visImg, cv::Point(currBB->roi.x, currBB->roi.y), cv::Point(currBB->roi.x + currBB->roi.width, currBB->roi.y + currBB->roi.height), cv::Scalar(0, 255, 0), 2);
                         
+                        // resize visImg to fit available screen size
+                        //cv::Mat visImgResized;
+                        //cv::resize(visImg, visImgResized, cv::Size(), 1.0, 1.0);
+
                         char str[200];
-                        sprintf(str, "TTC Lidar : %f s, TTC Camera : %f s", ttcLidar, ttcCamera);
-                        putText(visImg, str, cv::Point2f(80, 50), cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0,0,255));
+                        sprintf(str, "TTC Lidar: %0.3fs, TTC Camera: %.3fs", ttcLidar, ttcCamera);
+                        putText(visImg, str, cv::Point2f(80, 50), cv::FONT_HERSHEY_PLAIN, 2, cv::Scalar(0,0,255), 2);
 
                         string windowName = "Final Results : TTC";
-                        cv::namedWindow(windowName, 4);
+                        cv::namedWindow(windowName, 1); //4
                         //cv::resizeWindow(windowName, properties::output_window_width, properties::output_window_height);
                         //cv::moveWindow(windowName, properties::output_window_pos_x, properties::output_window_pos_y);
-                        cv::resizeWindow(windowName, 900, 400);
+                        //cv::resizeWindow(windowName, 90z0, 400);
                         cv::moveWindow(windowName, 50, 50);
                         cv::imshow(windowName, visImg);
                         cout << "Press key to continue to next frame" << endl;

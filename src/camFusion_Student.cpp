@@ -107,9 +107,11 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
         // augment object with some key data
         char str1[200], str2[200];
         sprintf(str1, "id=%d, #pts=%d", it1->boxID, (int)it1->lidarPoints.size());
-        putText(topviewImg, str1, cv::Point2f(left-250, bottom+50), cv::FONT_ITALIC, 2, currColor);
-        sprintf(str2, "xmin=%2.2f m, yw=%2.2f m", xwmin, ywmax-ywmin);
-        putText(topviewImg, str2, cv::Point2f(left-250, bottom+125), cv::FONT_ITALIC, 2, currColor);  
+        putText(topviewImg, str1, cv::Point2f(left-250, bottom+50), cv::FONT_ITALIC, 2, currColor, 3);
+        //putText(topviewImg, str1, cv::Point2f(left-250, 50), cv::FONT_ITALIC, 2, currColor, 3);
+        sprintf(str2, "xw_min=%2.2fm, yw_mean=%2.2fm", xwmin, ywmax-ywmin);
+        putText(topviewImg, str2, cv::Point2f(left-250, bottom+125), cv::FONT_ITALIC, 2, currColor, 3); 
+        //putText(topviewImg, str2, cv::Point2f(left-250, 125), cv::FONT_ITALIC, 2, currColor, 3);   
     }
 
     // plot distance markers
@@ -124,7 +126,7 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
     // display image
     string windowName = "3D Objects";
     cv::namedWindow(windowName, 0);
-    cv::resizeWindow(windowName, 400, 400);
+    cv::resizeWindow(windowName, 800, 600);
     cv::moveWindow(windowName, 50, 50);
     cv::imshow(windowName, topviewImg);
 
@@ -153,7 +155,47 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
 {
-    // ...
+    cout << "lidarPointsPrev.size(): " << lidarPointsPrev.size() << endl;
+    cout << "lidarPointsCurr.size(): " << lidarPointsCurr.size() << endl;
+    
+    int cnt = 0;
+    for (auto elem : lidarPointsPrev) {
+        //cout << elem.r << ", ";
+        if (elem.r > properties::reflectivity_min)
+            cnt++;
+    }
+    cout << "cnt: " << cnt << endl;
+    //cout << endl;
+
+    // find lidar point with min distance within a specified lane width
+    double data[2] = {1e6, 0};
+    double x_min_prev = 1e6;
+    double x_min_curr = 1e6;
+    for (auto elem : lidarPointsPrev) {
+        float d_y = fabs(elem.y);
+        if (d_y < properties::lane_width/2) {
+            x_min_prev = min(x_min_prev, elem.x);
+            data[0] = min(data[0], elem.x);
+            data[1] = max(data[1], elem.x);
+        }
+    }
+    for (auto elem : lidarPointsCurr) {
+        float d_y = fabs(elem.y);
+        if (d_y < properties::lane_width/2) {
+            x_min_curr = min(x_min_curr, elem.x);
+        }
+    }
+    cout << "x_min_prev: " << x_min_prev << endl;
+    cout << "x_min_curr: " << x_min_curr << endl;
+    cout << "x_min_delta: " << x_min_prev-x_min_curr << endl;
+
+    cout << "[min, max, delta]: [" << data[0] << ", " << data[1] << ", " << data[1]-data[0] << "]\n";
+
+    double d_t = 1.0/frameRate;
+
+    TTC = x_min_curr * d_t / (x_min_prev - x_min_curr);
+
+    cout << "TTC: " << TTC << endl;
 }
 
 

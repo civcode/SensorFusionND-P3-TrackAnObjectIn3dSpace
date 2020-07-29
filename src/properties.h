@@ -21,6 +21,11 @@ const bool use_focus_keypoints_on_vehicle = true;
 const bool use_matches_max_count = false;
 const int matches_max_count = 200;
 
+
+// Lidar TTC
+const double lane_width = 4.0;
+const double reflectivity_min = 0.3;
+
 // set feature type
 //const string keypoint_detector_type = "SHITOMASI";
 //const string keypoint_detector_type = "HARRIS";
