@@ -223,7 +223,7 @@ int main(int argc, const char *argv[])
                              matches, descriptorType, matcherType, selectorType);
 
             // store matches in current data frame
-            //(dataBuffer.end() - 1)->kptMatches = matches;
+            (dataBuffer.end() - 1)->kptMatches = matches;
 
             cout << "#7 : MATCH KEYPOINT DESCRIPTORS done" << endl;
 

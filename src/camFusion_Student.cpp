@@ -1,6 +1,8 @@
 
 #include <iostream>
+#include <iterator>
 #include <algorithm>
+#include <map>
 #include <numeric>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -140,7 +142,99 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 // associate a given bounding box with the keypoints it contains
 void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
 {
-    // ...
+    //cv::DMatch.queryIdx ... kptsPrev
+    //cv::DMatch.trainIdx ... kptsCurr 
+    //boundingBox .. current image bounding box
+
+    cout << "kptMatches.size(): " << kptMatches.size() << endl;
+
+    auto euclideanDistance = [](const cv::KeyPoint &p1, const cv::KeyPoint &p2) -> double {
+        return sqrt(pow(p1.pt.x-p2.pt.x,2) + pow(p1.pt.y-p2.pt.y,2));
+    };
+
+    //kptMatches[0].
+    int cnt = 0;
+    vector<cv::KeyPoint*> candidates_curr;
+    vector<cv::KeyPoint*> candidates_prev;
+    map<int,int> kp_matches;
+    vector<double> kp_distance;
+    for (auto match : kptMatches) {
+        cv::KeyPoint *curr_pt =  &kptsCurr[match.trainIdx];
+        cv::KeyPoint *prev_pt =  &kptsPrev[match.queryIdx];
+
+        if (boundingBox.roi.contains(curr_pt->pt)) {
+            //cout << "here\n";
+            double d = euclideanDistance(*curr_pt, *prev_pt);
+            //cout << "d: " << d << endl;
+            if (d > 1e-6) {
+                kp_distance.push_back(d);
+                candidates_curr.push_back(curr_pt);
+                candidates_prev.push_back(prev_pt);
+                kp_matches.insert(pair<int,int>(match.queryIdx, match.trainIdx));
+            }
+
+            // cout << "curr_pt [x, y]: [" << curr_pt->pt.x << ", " << curr_pt->pt.y << "]" << endl;
+            // cout << "prev_pt [x, y]: [" << prev_pt->pt.x << ", " << prev_pt->pt.y << "]" << endl;
+            // cout << "*\n";
+        }
+
+        // cout << "curr_pt [x, y]: [" << curr_pt->pt.x << ", " << curr_pt->pt.y << "]" << endl;
+        // cout << "prev_pt [x, y]: [" << prev_pt->pt.x << ", " << prev_pt->pt.y << "]" << endl;
+        // cout << "*\n";
+        // if (cnt++ > 10)
+        //     break;
+    }
+    //cout << "boundingBox.keypoints.size(): " << boundingBox.keypoints.size() << endl;
+    //cout << "candidates_curr.size(): " << candidates_curr.size() << endl;
+    //cout << "candidates_prev.size(): " << candidates_prev.size() << endl;
+    cout << "kp_matches.size(): " << kp_matches.size() << endl;
+
+    //candidates_curr[0].pt.
+
+    
+
+    //double sum_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0);
+    double mean_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0) / kp_distance.size();
+    double stddev_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0, 
+                                    [mean_d](double val, double d) {
+                                        return pow(d-mean_d, 2);
+                                    });
+    stddev_d = sqrt(stddev_d / kp_distance.size());
+
+    cout << "mean_d: " << mean_d << endl;
+    cout << "stddev_d: " << stddev_d << endl;
+
+    // for (auto it=kp_distance.begin(); it!=kp_distance.end(); ++it) {
+
+    // }
+    for (int i=0; i<kp_distance.size(); i++) {
+        if (kp_distance[i] < stddev_d * 2.0) {
+            //kptsPrev.push_back(*candidates_prev[i]);
+            //kptsCurr.push_back(*candidates_curr[i]);
+            cv::DMatch dm;
+            map<int,int>::iterator it = kp_matches.begin();
+
+            advance(it, i);
+            dm.queryIdx = it->first;    //prev
+            dm.trainIdx = it->second;   //curr
+            //kptMatches.push_back(dm);
+            boundingBox.keypoints.push_back(*candidates_curr[i]);
+            boundingBox.kptMatches.push_back(dm);
+
+        }
+    }
+    cout << "boundingBox.keypoints.size(): " << boundingBox.keypoints.size() << endl;
+    cout << "boundingBox.kptMatches.size(): " << boundingBox.kptMatches.size() << endl;
+    //kptMatches[0].
+
+    //cout << "kptsPrev.size(): " << kptsPrev.size() << endl;
+
+    // for (int i=0; i<candidates_curr.size(); i++) {
+    //     double d = euclideanDistance(candidates_curr[i], candidates_prev[i]);
+    //     //cout << "d: " << d << endl;
+    // }
+
+
 }
 
 
