@@ -24,7 +24,7 @@ const int matches_max_count = 200;
 
 // Lidar TTC
 const double lane_width = 4.0;
-const double reflectivity_min = 0.3;
+const double reflectivity_min = 0.2;
 
 // set feature type
 //const string keypoint_detector_type = "SHITOMASI";

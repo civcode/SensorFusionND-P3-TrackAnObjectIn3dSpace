@@ -155,16 +155,16 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
 {
-    cout << "lidarPointsPrev.size(): " << lidarPointsPrev.size() << endl;
-    cout << "lidarPointsCurr.size(): " << lidarPointsCurr.size() << endl;
+    //cout << "lidarPointsPrev.size(): " << lidarPointsPrev.size() << endl;
+    //cout << "lidarPointsCurr.size(): " << lidarPointsCurr.size() << endl;
     
-    int cnt = 0;
-    for (auto elem : lidarPointsPrev) {
-        //cout << elem.r << ", ";
-        if (elem.r > properties::reflectivity_min)
-            cnt++;
-    }
-    cout << "cnt: " << cnt << endl;
+    // int cnt = 0;
+    // for (auto elem : lidarPointsPrev) {
+    //     //cout << elem.r << ", ";
+    //     if (elem.r > properties::reflectivity_min)
+    //         cnt++;
+    // }
+    // cout << "cnt: " << cnt << endl;
     //cout << endl;
 
     // algorithm
@@ -174,9 +174,9 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
     //      if distance to mean is larger than 1 stddev
     //          reject closest point
 
-    auto euclidean_distance = [](LidarPoint &p1, LidarPoint &p2) {
-        return sqrt(pow(p1.x-p2.x,2) + pow(p1.y-p2.y,2) +pow(p1.z-p2.z,2));
-    }; 
+    // auto euclidean_distance = [](LidarPoint &p1, LidarPoint &p2) {
+    //     return sqrt(pow(p1.x-p2.x,2) + pow(p1.y-p2.y,2) +pow(p1.z-p2.z,2));
+    // }; 
 
     auto print_vec = [](vector<LidarPoint> &vec, int n=5) {
         for (auto it=vec.begin(); it!=vec.end(); ++it) {
@@ -187,16 +187,31 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
         }
     };
 
-    print_vec(lidarPointsPrev);
+    //print_vec(lidarPointsPrev);
 
     sort(lidarPointsPrev.begin(), lidarPointsPrev.end(), [](LidarPoint &p1, LidarPoint &p2) -> bool {return p1.x < p2.x;});
 
     sort(lidarPointsCurr.begin(), lidarPointsCurr.end(), [](LidarPoint &p1, LidarPoint &p2) -> bool {return p1.x < p2.x;});
 
-    cout << endl;
-    print_vec(lidarPointsPrev);
+    //cout << endl;
+    //print_vec(lidarPointsPrev);
 
-    int kn = 10;
+    auto getStatisticalParameters = []( vector<LidarPoint> &lidar_points, double &sum_x, double &mean_x, double stddev_x, int kn=10) {
+        if (kn < lidar_points.size()) {
+            sum_x = accumulate(lidar_points.begin(), lidar_points.begin() + kn, 0.0, 
+                [](double val, LidarPoint &pt) -> double {
+                    return val+pt.x;
+                });
+            mean_x = sum_x / kn;
+            stddev_x = accumulate(lidar_points.begin(), lidar_points.begin() + kn, 0.0, 
+                [mean_x](double val, LidarPoint &pt) -> double {
+                    return val + pow(pt.x-mean_x,2);
+                });
+            stddev_x = sqrt(stddev_x/kn);    
+        }
+    };
+
+    int kn = 20;
     double sum_x;
     double mean_x;
     double stddev_x;
@@ -204,119 +219,93 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
     int cnt1 = 0;
     while (!is_valid_point) {
         
-        if (kn < lidarPointsPrev.size()) {
-            sum_x = accumulate(lidarPointsPrev.begin(), lidarPointsPrev.begin() + kn, 0.0, 
-                [](double val, LidarPoint &pt) -> double {
-                    return val+pt.x;
-                });
-            mean_x = sum_x / kn;
-            stddev_x = accumulate(lidarPointsPrev.begin(), lidarPointsPrev.begin() + kn, 0.0, 
-                [mean_x](double val, LidarPoint &pt) -> double {
-                    return val + pow(pt.x-mean_x,2);
-                });
-        }
-        cout << "sum_x: " << sum_x << endl;
-        cout << "mean_x: " << mean_x << endl;
-        cout << "stddev_x: " << stddev_x << endl;
-        cout << "stddev_p: " << stddev_x * 3.0 << endl;
-        //cout << "delta: " << fabs(lidarPointsPrev[0].x-mean_x) << endl;
-        cout << "delta: " << fabs(lidarPointsPrev[0].x - lidarPointsPrev[1].x) << endl;
+        // if (kn < lidarPointsPrev.size()) {
+        //     sum_x = accumulate(lidarPointsPrev.begin(), lidarPointsPrev.begin() + kn, 0.0, 
+        //         [](double val, LidarPoint &pt) -> double {
+        //             return val+pt.x;
+        //         });
+        //     mean_x = sum_x / kn;
+        //     stddev_x = accumulate(lidarPointsPrev.begin(), lidarPointsPrev.begin() + kn, 0.0, 
+        //         [mean_x](double val, LidarPoint &pt) -> double {
+        //             return val + pow(pt.x-mean_x,2);
+        //         });
+        //     stddev_x = sqrt(stddev_x/kn);    
+        // }
 
+        getStatisticalParameters(lidarPointsPrev, sum_x, mean_x, stddev_x, kn);
+
+        // cout << "sum_x: " << sum_x << endl;
+        // cout << "mean_x: " << mean_x << endl;
+        // cout << "stddev_x: " << stddev_x << endl;
+        // cout << "stddev_p: " << stddev_x * 3.0 << endl;
+        // //cout << "delta: " << fabs(lidarPointsPrev[0].x-mean_x) << endl;
+        // cout << "delta: " << fabs(lidarPointsPrev[0].x - lidarPointsPrev[1].x) << endl;
+      
         //if (fabs(lidarPointsPrev[0].x - mean_x) > stddev_x * 3.0) {
-        if (fabs(lidarPointsPrev[0].x - lidarPointsPrev[1].x) > stddev_x * 1.0) {
+        if (fabs(lidarPointsPrev[0].x - lidarPointsPrev[1].x) > stddev_x * 1.0 || lidarPointsPrev[0].r < properties::reflectivity_min) {
             lidarPointsPrev.erase(lidarPointsPrev.begin());
             cout << "erased first element\n";
             //cout << endl;
-            print_vec(lidarPointsPrev);
+            //print_vec(lidarPointsPrev);
         } else {
             is_valid_point = true;
         }
     }
-    cout << endl;
+   // cout << endl;
 
     is_valid_point = false;
     while (!is_valid_point) {
         
-        if (kn < lidarPointsCurr.size()) {
-            sum_x = accumulate(lidarPointsCurr.begin(), lidarPointsCurr.begin() + kn, 0.0, 
-                [](double val, LidarPoint &pt) -> double {
-                    return val+pt.x;
-                });
-            mean_x = sum_x / kn;
-            stddev_x = accumulate(lidarPointsCurr.begin(), lidarPointsCurr.begin() + kn, 0.0, 
-                [mean_x](double val, LidarPoint &pt) -> double {
-                    return val + pow(pt.x-mean_x,2);
-                });
-        }
-        cout << "sum_x: " << sum_x << endl;
-        cout << "mean_x: " << mean_x << endl;
-        cout << "stddev_x: " << stddev_x << endl;
-        cout << "stddev_p: " << stddev_x * 3.0 << endl;
-        //cout << "delta: " << fabs(lidarPointsPrev[0].x-mean_x) << endl;
-        cout << "delta: " << fabs(lidarPointsCurr[0].x - lidarPointsCurr[1].x) << endl;
+        // if (kn < lidarPointsCurr.size()) {
+        //     sum_x = accumulate(lidarPointsCurr.begin(), lidarPointsCurr.begin() + kn, 0.0, 
+        //         [](double val, LidarPoint &pt) -> double {
+        //             return val+pt.x;
+        //         });
+        //     mean_x = sum_x / kn;
+        //     stddev_x = accumulate(lidarPointsCurr.begin(), lidarPointsCurr.begin() + kn, 0.0, 
+        //         [mean_x](double val, LidarPoint &pt) -> double {
+        //             return val + pow(pt.x-mean_x,2);
+        //         });
+        //     stddev_x = sqrt(stddev_x/kn); 
+        // }
+
+        getStatisticalParameters(lidarPointsCurr, sum_x, mean_x, stddev_x, kn);
+
+        // cout << "sum_x: " << sum_x << endl;
+        // cout << "mean_x: " << mean_x << endl;
+        // cout << "stddev_x: " << stddev_x << endl;
+        // cout << "stddev_p: " << stddev_x * 3.0 << endl;
+        // //cout << "delta: " << fabs(lidarPointsPrev[0].x-mean_x) << endl;
+        // cout << "delta: " << fabs(lidarPointsCurr[0].x - lidarPointsCurr[1].x) << endl;
 
         //if (fabs(lidarPointsPrev[0].x - mean_x) > stddev_x * 3.0) {
-        if (fabs(lidarPointsCurr[0].x - lidarPointsCurr[1].x) > stddev_x * 1.0) {
+        if (fabs(lidarPointsCurr[0].x - lidarPointsCurr[1].x) > stddev_x * 1.0 || lidarPointsPrev[0].r < properties::reflectivity_min) {
             lidarPointsCurr.erase(lidarPointsCurr.begin());
             cout << "erased first element\n";
             //cout << endl;
-            print_vec(lidarPointsCurr);
+            //print_vec(lidarPointsCurr);
         } else {
             is_valid_point = true;
         }
     }
-    cout << endl;
+    //cout << endl;
     //double x_min_prev = lidarPointsPrev[0].x;
     //double x_min_curr = lidarPointsCurr[0].x;
     double x_min_prev = 0.0;
     double x_min_curr = 0.0;
 
-    for (int i=0; i<10; i++) {
+    for (int i=0; i<kn; i++) {
         x_min_prev += lidarPointsPrev[i].x;
         x_min_curr += lidarPointsCurr[i].x;
     }
-    x_min_prev /= 10;
-    x_min_curr /= 10;
+    x_min_prev /= kn;
+    x_min_curr /= kn;
 
-    //cout << endl;
-
-    // stddev_x = 0.0;
-    // for (int i=0; i<10; i++)
-    //     stddev_x += pow(lidarPointsPrev[i].x-mean_x,2);
-
-    // cout  << "stddev_x: " << stddev_x << endl;
-
-    // find lidar point with min distance within a specified lane width
-    // double data[2] = {1e6, 0};
-    // double x_min_prev = 1e6;
-    // double x_min_curr = 1e6;
-    // for (auto elem : lidarPointsPrev) {
-    //     float d_y = fabs(elem.y);
-    //     if (d_y < properties::lane_width/2 && elem.r > properties::reflectivity_min) {
-    //         x_min_prev = min(x_min_prev, elem.x);
-    //         data[0] = min(data[0], elem.x);
-    //         data[1] = max(data[1], elem.x);
-    //         // outlier check
-    //         // vector<LidarPoint> neighbors;
-    //         // int k_neighbors = 20;
-    //         // for (auto lp : lidarPointsPrev) {
-                
-
-    //         // }
-    //     }
-    // }
-    // for (auto elem : lidarPointsCurr) {
-    //     float d_y = fabs(elem.y);
-    //     if (d_y < properties::lane_width/2 && elem.r > properties::reflectivity_min) {
-    //         x_min_curr = min(x_min_curr, elem.x);
-    //     }
-    // }
     cout << "x_min_prev: " << x_min_prev << endl;
     cout << "x_min_curr: " << x_min_curr << endl;
     cout << "x_min_delta: " << x_min_prev-x_min_curr << endl;
 
-    //cout << "[min, max, delta]: [" << data[0] << ", " << data[1] << ", " << data[1]-data[0] << "]\n";
-
+  
     double d_t = 1.0/frameRate;
 
     TTC = x_min_curr * d_t / (x_min_prev - x_min_curr);
