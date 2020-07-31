@@ -140,7 +140,9 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 
 
 // associate a given bounding box with the keypoints it contains
-void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
+// void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
+// {
+void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundingBoxCurr, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
 {
     //cv::DMatch.queryIdx ... kptsPrev
     //cv::DMatch.trainIdx ... kptsCurr 
@@ -162,7 +164,8 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint
         cv::KeyPoint *curr_pt =  &kptsCurr[match.trainIdx];
         cv::KeyPoint *prev_pt =  &kptsPrev[match.queryIdx];
 
-        if (boundingBox.roi.contains(curr_pt->pt)) {
+        if (boundingBoxCurr.roi.contains(curr_pt->pt) && 
+            boundingBoxPrev.roi.contains(prev_pt->pt) ) { //checking both BB => much better results
             //cout << "here\n";
             double d = euclideanDistance(*curr_pt, *prev_pt);
             //cout << "d: " << d << endl;
@@ -208,7 +211,10 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint
 
     // }
     for (int i=0; i<kp_distance.size(); i++) {
-        if (kp_distance[i] < stddev_d * 2.0) {
+        //cout << "kp_distance: " << kp_distance[i] << endl;
+        //if (kp_distance[i] < stddev_d * 20.0) {
+        if (kp_distance[i] < mean_d * 1.5) {
+        //if (true) {
             //kptsPrev.push_back(*candidates_prev[i]);
             //kptsCurr.push_back(*candidates_curr[i]);
             cv::DMatch dm;
@@ -218,13 +224,13 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint
             dm.queryIdx = it->first;    //prev
             dm.trainIdx = it->second;   //curr
             //kptMatches.push_back(dm);
-            boundingBox.keypoints.push_back(*candidates_curr[i]);
-            boundingBox.kptMatches.push_back(dm);
+            //boundingBoxCurr.keypoints.push_back(*candidates_curr[i]);
+            boundingBoxCurr.kptMatches.push_back(dm);
 
         }
     }
-    cout << "boundingBox.keypoints.size(): " << boundingBox.keypoints.size() << endl;
-    cout << "boundingBox.kptMatches.size(): " << boundingBox.kptMatches.size() << endl;
+    cout << "boundingBoxCurr.keypoints.size(): " << boundingBoxCurr.keypoints.size() << endl;
+    cout << "boundingBoxCurr.kptMatches.size(): " << boundingBoxCurr.kptMatches.size() << endl;
     //kptMatches[0].
 
     //cout << "kptsPrev.size(): " << kptsPrev.size() << endl;
@@ -305,7 +311,7 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
         }
     };
 
-    int kn = 20;
+    int kn = 50;
     double sum_x;
     double mean_x;
     double stddev_x;
@@ -388,12 +394,24 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
     double x_min_prev = 0.0;
     double x_min_curr = 0.0;
 
-    for (int i=0; i<kn; i++) {
-        x_min_prev += lidarPointsPrev[i].x;
-        x_min_curr += lidarPointsCurr[i].x;
-    }
-    x_min_prev /= kn;
-    x_min_curr /= kn;
+    // // calculate mean
+    // for (int i=0; i<kn; i++) {
+    //     x_min_prev += lidarPointsPrev[i].x;
+    //     x_min_curr += lidarPointsCurr[i].x;
+    // }
+    // x_min_prev /= kn;
+    // x_min_curr /= kn;
+    
+    // calculate mean
+    // x_min_prev = accumulate(lidarPointsPrev.begin(), lidarPointsPrev.end(), 0.0, [](double val, LidarPoint &pt){return val+pt.x;})/lidarPointsPrev.size();
+    // x_min_curr = accumulate(lidarPointsCurr.begin(), lidarPointsCurr.end(), 0.0, [](double val, LidarPoint &pt){return val+pt.x;})/lidarPointsCurr.size();;
+
+    // get median => much better results!
+    //x_min_prev = lidarPointsPrev[lidarPointsPrev.size()/2].x;
+    //x_min_curr = lidarPointsCurr[lidarPointsCurr.size()/2].x;
+    x_min_prev = lidarPointsPrev[kn/2].x;
+    x_min_curr = lidarPointsCurr[kn/2].x;
+
 
     cout << "x_min_prev: " << x_min_prev << endl;
     cout << "x_min_curr: " << x_min_curr << endl;

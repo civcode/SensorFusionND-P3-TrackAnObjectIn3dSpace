@@ -279,7 +279,8 @@ int main(int argc, const char *argv[])
                     //// TASK FP.3 -> assign enclosed keypoint matches to bounding box (implement -> clusterKptMatchesWithROI)
                     //// TASK FP.4 -> compute time-to-collision based on camera (implement -> computeTTCCamera)
                     double ttcCamera;
-                    clusterKptMatchesWithROI(*currBB, (dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->kptMatches);                    
+                    //clusterKptMatchesWithROI(*currBB, (dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->kptMatches);    
+                    clusterKptMatchesWithROI(*prevBB, *currBB, (dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->kptMatches);                    
                     computeTTCCamera((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints, currBB->kptMatches, sensorFrameRate, ttcCamera);
                     //// EOF STUDENT ASSIGNMENT
 
@@ -293,6 +294,15 @@ int main(int argc, const char *argv[])
                         // resize visImg to fit available screen size
                         //cv::Mat visImgResized;
                         //cv::resize(visImg, visImgResized, cv::Size(), 1.0, 1.0);
+                        // rest feature matches
+                        for (int i=0; i<currBB->kptMatches.size(); i++) {
+                            cv::KeyPoint *kp_prev = &(dataBuffer.end() - 2)->keypoints[currBB->kptMatches[i].queryIdx];
+                            cv::KeyPoint *kp_curr = &(dataBuffer.end() - 1)->keypoints[currBB->kptMatches[i].trainIdx];
+                            cv::circle(visImg, kp_prev->pt, 4, cv::Scalar(255,0,255,1), 2);   
+                            cv::circle(visImg, kp_curr->pt, 4, cv::Scalar(255,255,0,1), 2); 
+                            cv::line(visImg, kp_prev->pt, kp_curr->pt, cv::Scalar(0,0,255,1), 2);    
+
+                        }
 
                         char str[200];
                         sprintf(str, "TTC Lidar: %0.3fs, TTC Camera: %.3fs", ttcLidar, ttcCamera);
