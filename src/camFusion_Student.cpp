@@ -139,27 +139,12 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 }
 
 
-// associate a given bounding box with the keypoints it contains
-// void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
-// {
 void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundingBoxCurr, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
 {
-    //cv::DMatch.queryIdx ... kptsPrev
-    //cv::DMatch.trainIdx ... kptsCurr 
-    //boundingBox .. current image bounding box
-
-    //cout << "kptMatches.size(): " << kptMatches.size() << endl;
-
-    // auto euclideanDistance = [](const cv::KeyPoint &p1, const cv::KeyPoint &p2) -> double {
-    //     return sqrt(pow(p1.pt.x-p2.pt.x,2) + pow(p1.pt.y-p2.pt.y,2));
-    // };
-
-    //kptMatches[0].
-    int cnt = 0;
-    vector<cv::KeyPoint*> candidates_curr;
-    vector<cv::KeyPoint*> candidates_prev;
-    map<int,int> kp_matches;
-    vector<double> kp_distance;
+    //vector<cv::KeyPoint*> candidates_curr;
+    //vector<cv::KeyPoint*> candidates_prev;
+    //map<int,int> kp_matches;
+    //vector<double> kp_distance;
     for (auto match : kptMatches) {
         cv::KeyPoint *curr_pt =  &kptsCurr[match.trainIdx];
         cv::KeyPoint *prev_pt =  &kptsPrev[match.queryIdx];
@@ -183,87 +168,45 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
             boundingBoxPrev.roi.contains(prev_pt->pt) ) { //checking both BB => much better results
         // if (roi_curr.contains(curr_pt->pt) && 
         //     roi_prev.contains(prev_pt->pt) ) { //checking both BB => much better results
-            //cout << "here\n";
-            //double d = euclideanDistance(*curr_pt, *prev_pt);
+
             double d = cv::norm(curr_pt->pt - prev_pt->pt);
-            //cout << "d: " << d << endl;
             if (d > numeric_limits<double>::epsilon()) {
-                kp_distance.push_back(d);
-                candidates_curr.push_back(curr_pt);
-                candidates_prev.push_back(prev_pt);
-                kp_matches.insert(pair<int,int>(match.queryIdx, match.trainIdx));
+                //kp_distance.push_back(d);
+                //candidates_curr.push_back(curr_pt);
+                //candidates_prev.push_back(prev_pt);
+                //kp_matches.insert(pair<int,int>(match.queryIdx, match.trainIdx));
                 boundingBoxCurr.kptMatches.push_back(match);
             }
-
-            // cout << "curr_pt [x, y]: [" << curr_pt->pt.x << ", " << curr_pt->pt.y << "]" << endl;
-            // cout << "prev_pt [x, y]: [" << prev_pt->pt.x << ", " << prev_pt->pt.y << "]" << endl;
-            // cout << "*\n";
         }
 
-        // cout << "curr_pt [x, y]: [" << curr_pt->pt.x << ", " << curr_pt->pt.y << "]" << endl;
-        // cout << "prev_pt [x, y]: [" << prev_pt->pt.x << ", " << prev_pt->pt.y << "]" << endl;
-        // cout << "*\n";
-        // if (cnt++ > 10)
-        //     break;
     }
-    //return;
-    //cout << "boundingBox.keypoints.size(): " << boundingBox.keypoints.size() << endl;
-    //cout << "candidates_curr.size(): " << candidates_curr.size() << endl;
-    //cout << "candidates_prev.size(): " << candidates_prev.size() << endl;
-    //cout << "kp_matches.size(): " << kp_matches.size() << endl;
 
-    //candidates_curr[0].pt.
 
-    
+    // //double sum_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0);
+    // double median_d = kp_distance[kp_distance.size()/2];
+    // double mean_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0) / kp_distance.size();
+    // double stddev_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0, 
+    //                                 [mean_d](double val, double d) {
+    //                                     return pow(d-mean_d, 2);
+    //                                 });
+    // stddev_d = sqrt(stddev_d / kp_distance.size());
 
-    //double sum_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0);
-    double median_d = kp_distance[kp_distance.size()/2];
-    double mean_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0) / kp_distance.size();
-    double stddev_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0, 
-                                    [mean_d](double val, double d) {
-                                        return pow(d-mean_d, 2);
-                                    });
-    stddev_d = sqrt(stddev_d / kp_distance.size());
+    // for (int i=0; i<kp_distance.size(); i++) {
+    //     //cout << "kp_distance: " << kp_distance[i] << endl;
+    //     //if (kp_distance[i] < stddev_d * 20.0) {
+    //     //if (kp_distance[i] < mean_d * 1.5) {
+    //     //if (kp_distance[i] < median_d * 2.5) {
+    //     if (true) {
+    //         cv::DMatch dm;
+    //         map<int,int>::iterator it = kp_matches.begin();
 
-    // cout << "mean_d: " << mean_d << endl;
-    // cout << "stddev_d: " << stddev_d << endl;
-    // cout << "*median_d: " << median_d << endl;
+    //         advance(it, i);
+    //         dm.queryIdx = it->first;    //prev
+    //         dm.trainIdx = it->second;   //curr
+    //         boundingBoxCurr.kptMatches.push_back(dm);
 
-    // for (auto it=kp_distance.begin(); it!=kp_distance.end(); ++it) {
-
+    //     }
     // }
-    for (int i=0; i<kp_distance.size(); i++) {
-        //cout << "kp_distance: " << kp_distance[i] << endl;
-        //if (kp_distance[i] < stddev_d * 20.0) {
-        //if (kp_distance[i] < mean_d * 1.5) {
-        //if (kp_distance[i] < median_d * 2.5) {
-        if (true) {
-            //kptsPrev.push_back(*candidates_prev[i]);
-            //kptsCurr.push_back(*candidates_curr[i]);
-            cv::DMatch dm;
-            map<int,int>::iterator it = kp_matches.begin();
-
-            advance(it, i);
-            dm.queryIdx = it->first;    //prev
-            dm.trainIdx = it->second;   //curr
-            //kptMatches.push_back(dm);
-            //boundingBoxCurr.keypoints.push_back(*candidates_curr[i]);
-            boundingBoxCurr.kptMatches.push_back(dm);
-
-        }
-    }
-    //cout << "boundingBoxCurr.keypoints.size(): " << boundingBoxCurr.keypoints.size() << endl;
-    //cout << "boundingBoxCurr.kptMatches.size(): " << boundingBoxCurr.kptMatches.size() << endl;
-    //kptMatches[0].
-
-    //cout << "kptsPrev.size(): " << kptsPrev.size() << endl;
-
-    // for (int i=0; i<candidates_curr.size(); i++) {
-    //     double d = euclideanDistance(candidates_curr[i], candidates_prev[i]);
-    //     //cout << "d: " << d << endl;
-    // }
-
-
 }
 
 
