@@ -16,7 +16,7 @@ namespace properties {
 using namespace std;
 //namespace plt = matplotlibcpp;
 
-struct frame_data_ frame_data[10];
+struct frame_data_ frame_data[18];
 
 int current_frame_index = 0;
 
@@ -27,7 +27,7 @@ void printEvalData() {
     cout << "===============================================\n";
     cout << "Feature Detector  : " << keypoint_detector_type << endl;
     cout << "Feature Descriptor: " << feature_descriptor_type << endl;   
-    cout << "No. of Feature in ROI: ";
+    //cout << "No. of Feature in ROI: ";
 
     vector<float> ft_cnt;
     //vector<float> match_cnt;
@@ -40,10 +40,10 @@ void printEvalData() {
         float min = *min_element(ft_cnt.begin(), ft_cnt.end());
         float max = *max_element(ft_cnt.begin(), ft_cnt.end());
         float avg = accumulate(ft_cnt.begin(), ft_cnt.end(), 0.0f) / ft_cnt.size();
-        cout << " [min, max, avg] = [" << min << ", " << max << ", " << avg << "]\n";
+        //cout << " [min, max, avg] = [" << min << ", " << max << ", " << avg << "]\n";
     }
 
-    cout << "Keypoint distribution: size (count avg):\n";
+   // cout << "Keypoint distribution: size (count avg):\n";
     map<float, int> size_distribution;
     map<float, vector<float>> ft_dist;
     for (auto frame : frame_data) {
@@ -112,14 +112,22 @@ void printEvalData() {
 
         vector<float> match_cnt;
         vector<float> det_time, des_time, match_time;
+        vector<double> ttc_camera, ttc_lidar;
+        vector<int> kp_roi_count, kp_matches;
         for (auto frame : frame_data) {
             match_cnt.push_back(frame.feature_matches);
             det_time.push_back(frame.detector_time);
             des_time.push_back(frame.descriptor_time);
             match_time.push_back(frame.matcher_time);
+
+            ttc_camera.push_back(frame.ttc_camera);
+            ttc_lidar.push_back(frame.ttc_lidar);
+
+            kp_roi_count.push_back(frame.kp_roi_count);
+            kp_matches.push_back(frame.kp_matches);
         } 
 
-        cv::FileStorage fs("eval-detector-" + properties::keypoint_detector_type + "-" +properties::feature_descriptor_type+ ".json", cv::FileStorage::WRITE);
+        cv::FileStorage fs("../evaluation/eval-detector-" + properties::keypoint_detector_type + "-" +properties::feature_descriptor_type+ ".json", cv::FileStorage::WRITE);
         // cv::FileStorage fs("eval-DET_" + properties::keypoint_detector_type + "-DES_" + properties::feature_descriptor_type + "-" + properties::feature_matcher_type + "-" + properties::match_selector_type + ".json", cv::FileStorage::WRITE);
         fs << "detector_type" << properties::keypoint_detector_type;
         fs << "descriptor_type" << properties::feature_descriptor_type;
@@ -142,6 +150,13 @@ void printEvalData() {
         fs << "match_count_avg" << accumulate(match_cnt.begin(), match_cnt.end(), 0.0f)/match_cnt.size(); 
 
         fs << "feature_size"  << ft_stats;
+
+        fs << "ttc_lidar"  << ttc_lidar;
+        fs << "ttc_camera" << ttc_camera;
+
+        fs << "kp_roi_count" << kp_roi_count;
+        fs << "kp_roi_matches" << kp_matches;
+
         fs.release();
     }
 

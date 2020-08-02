@@ -284,6 +284,16 @@ int main(int argc, const char *argv[])
                     computeTTCCamera((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints, currBB->kptMatches, sensorFrameRate, ttcCamera);
                     //// EOF STUDENT ASSIGNMENT
 
+                    cout << "properties::current_frame_index: " << properties::current_frame_index << endl;
+                    properties::frame_data[properties::current_frame_index].ttc_lidar = ttcLidar;
+                    properties::frame_data[properties::current_frame_index].ttc_camera = ttcCamera;
+                    properties::frame_data[properties::current_frame_index].kp_roi_count = currBB->keypoints.size();
+                    properties::frame_data[properties::current_frame_index].kp_matches = currBB->kptMatches.size();
+                    // properties::frame_data[properties::current_frame_index]
+                    // properties::frame_data[properties::current_frame_index]
+                    // properties::frame_data[properties::current_frame_index]
+                    properties::current_frame_index++;
+
                     bVis = true;
                     if (bVis)
                     {
@@ -316,7 +326,7 @@ int main(int argc, const char *argv[])
                         cv::moveWindow(windowName, 50, 50);
                         cv::imshow(windowName, visImg);
                         cout << "Press key to continue to next frame" << endl;
-                        cv::waitKey(0);
+                        cv::waitKey(10);
                     }
                     bVis = false;
 
@@ -326,6 +336,8 @@ int main(int argc, const char *argv[])
         }
 
     } // eof loop over all images
+
+    properties::printEvalData();
 
     return 0;
 }

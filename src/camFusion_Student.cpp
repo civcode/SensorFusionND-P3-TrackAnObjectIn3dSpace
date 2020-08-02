@@ -175,8 +175,13 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
                 //candidates_curr.push_back(curr_pt);
                 //candidates_prev.push_back(prev_pt);
                 //kp_matches.insert(pair<int,int>(match.queryIdx, match.trainIdx));
+                
                 boundingBoxCurr.kptMatches.push_back(match);
             }
+        }
+        // store number of kp in roi for evaluation
+        if (boundingBoxCurr.roi.contains(curr_pt->pt)) {
+            boundingBoxCurr.keypoints.push_back(*curr_pt);
         }
 
     }

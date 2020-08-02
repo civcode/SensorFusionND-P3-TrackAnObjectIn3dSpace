@@ -31,17 +31,17 @@ const int keypoint_pair_count = 100; //100;
 const int pairs_used_count = 50;
 
 // set feature type
-//const string keypoint_detector_type = "SHITOMASI";
+const string keypoint_detector_type = "SHITOMASI";
 //const string keypoint_detector_type = "HARRIS";
 //const string keypoint_detector_type = "BRISK";
-const string keypoint_detector_type = "ORB";
+//const string keypoint_detector_type = "ORB";
 //const string keypoint_detector_type = "SIFT";
 //const string keypoint_detector_type = "SURF"; // not part of assignment
 //const string keypoint_detector_type = "AKAZE";
 
 // set descriptor type
-const string feature_descriptor_type =  "BRISK";    //binary
-//const string feature_descriptor_type =  "BRIEF";  //binary
+//const string feature_descriptor_type =  "BRISK";    //binary
+const string feature_descriptor_type =  "BRIEF";  //binary
 //const string feature_descriptor_type =  "ORB";    //binary
 //const string feature_descriptor_type =  "FREAK";  //binary
 //const string feature_descriptor_type =  "AKAZE";  //binary
@@ -70,6 +70,11 @@ struct frame_data_ {
     float descriptor_time;
     float matcher_time;
     vector<float> feature_size;
+
+    double ttc_lidar;
+    double ttc_camera;
+    int kp_roi_count;
+    int kp_matches;
 };
 
 extern struct frame_data_ frame_data[];
