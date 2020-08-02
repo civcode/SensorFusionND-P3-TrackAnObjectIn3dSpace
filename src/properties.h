@@ -26,6 +26,10 @@ const int matches_max_count = 200;
 const double lane_width = 4.0;
 const double reflectivity_min = 0.2;
 
+// Camera TTC
+const int keypoint_pair_count = 100; //100;
+const int pairs_used_count = 50;
+
 // set feature type
 //const string keypoint_detector_type = "SHITOMASI";
 //const string keypoint_detector_type = "HARRIS";

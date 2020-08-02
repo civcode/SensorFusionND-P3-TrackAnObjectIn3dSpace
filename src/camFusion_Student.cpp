@@ -164,8 +164,25 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
         cv::KeyPoint *curr_pt =  &kptsCurr[match.trainIdx];
         cv::KeyPoint *prev_pt =  &kptsPrev[match.queryIdx];
 
-        if (boundingBoxCurr.roi.contains(curr_pt->pt) && 
-            boundingBoxPrev.roi.contains(prev_pt->pt) ) { //checking both BB => much better results
+        //reduce bounding box size to reduce number of outliers
+        cv::Rect roi_curr;
+        cv::Rect roi_prev;
+        double f = 0.8;
+        roi_curr.width = boundingBoxCurr.roi.width * f;
+        roi_curr.height = boundingBoxCurr.roi.height * f;
+        roi_curr.x = boundingBoxCurr.roi.x + (boundingBoxCurr.roi.width - roi_curr.width) / 2;
+        roi_curr.y = boundingBoxCurr.roi.y + (boundingBoxCurr.roi.height - roi_curr.height) / 2;
+
+        roi_prev.width = boundingBoxPrev.roi.width * f;
+        roi_prev.height = boundingBoxPrev.roi.height * f;
+        roi_prev.x = boundingBoxPrev.roi.x + (boundingBoxPrev.roi.width - roi_prev.width) / 2;
+        roi_prev.y = boundingBoxPrev.roi.y + (boundingBoxPrev.roi.height - roi_prev.height) / 2;
+
+
+        // if (boundingBoxCurr.roi.contains(curr_pt->pt) && 
+        //     boundingBoxPrev.roi.contains(prev_pt->pt) ) { //checking both BB => much better results
+        if (roi_curr.contains(curr_pt->pt) && 
+            roi_prev.contains(prev_pt->pt) ) { //checking both BB => much better results
             //cout << "here\n";
             double d = euclideanDistance(*curr_pt, *prev_pt);
             //cout << "d: " << d << endl;
@@ -197,6 +214,7 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
     
 
     //double sum_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0);
+    double median_d = kp_distance[kp_distance.size()/2];
     double mean_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0) / kp_distance.size();
     double stddev_d = accumulate(kp_distance.begin(), kp_distance.end(), 0.0, 
                                     [mean_d](double val, double d) {
@@ -206,6 +224,7 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
 
     cout << "mean_d: " << mean_d << endl;
     cout << "stddev_d: " << stddev_d << endl;
+    cout << "*median_d: " << median_d << endl;
 
     // for (auto it=kp_distance.begin(); it!=kp_distance.end(); ++it) {
 
@@ -213,7 +232,8 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
     for (int i=0; i<kp_distance.size(); i++) {
         //cout << "kp_distance: " << kp_distance[i] << endl;
         //if (kp_distance[i] < stddev_d * 20.0) {
-        if (kp_distance[i] < mean_d * 1.5) {
+        //if (kp_distance[i] < mean_d * 1.5) {
+        if (kp_distance[i] < median_d * 2.5) {
         //if (true) {
             //kptsPrev.push_back(*candidates_prev[i]);
             //kptsCurr.push_back(*candidates_curr[i]);
@@ -248,7 +268,98 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
 void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, 
                       std::vector<cv::DMatch> kptMatches, double frameRate, double &TTC, cv::Mat *visImg)
 {
-    // ...
+    // 1. randomly pick keypoints and compute distance
+    // 2. sort and pick certain number of highest distance pairs
+    // 3. compyte quotient
+    // 4. compute TTC
+
+    auto euclidean_distance = [](cv::KeyPoint &p1, cv::KeyPoint &p2) {
+        return sqrt(pow(p1.pt.x-p2.pt.x,2) + pow(p1.pt.y-p2.pt.y,2));
+    };
+    
+    typedef struct kp_pair_ {
+        cv::DMatch *kp1_match;
+        cv::DMatch *kp2_match;
+        cv::KeyPoint *kp1;
+        cv::KeyPoint *kp2;
+        double d;
+    } kp_pair;
+
+    // find paris of keypoints in one image and compute the distance
+    vector<kp_pair> pairs;
+    while (pairs.size() < properties::keypoint_pair_count) {
+        cv::DMatch *kp1_match = &kptMatches[rand()%kptMatches.size()];
+        cv::DMatch *kp2_match = &kptMatches[rand()%kptMatches.size()];
+        //int kp1_idx = kptMatches[rand()%kptMatches.size()].queryIdx;
+        //int kp2_idx = kptMatches[rand()%kptMatches.size()].queryIdx;
+        //cv::KeyPoint *kp1 = &kptsPrev[kp1_idx];
+        //cv::KeyPoint *kp2 = &kptsPrev[kp2_idx];
+        cv::KeyPoint *kp1 = &kptsPrev[kp1_match->queryIdx];
+        cv::KeyPoint *kp2 = &kptsPrev[kp2_match->queryIdx];
+
+        double d = euclidean_distance(*kp1, *kp2);
+        //cout << "d: " << d << endl;
+        if (d > 1e-2) {
+            pairs.push_back({kp1_match, kp2_match, kp1, kp2, d});
+        }
+    }
+
+    // sort found pairs by distance
+    //sort(pairs.begin(), pairs.end(), [](kp_pair p1, kp_pair p2) -> bool {return p1.d>p2.d;});
+
+    // for (auto e : pairs) {
+    //     cout << e.d << endl;
+    // }
+
+    vector<double> d_quotient;
+    for (int i=0; i<properties::pairs_used_count; i++) {
+        double d0 = pairs[i].d; //previous distance
+        
+        //compute current distance
+        cv::KeyPoint *kp1 = &kptsCurr[pairs[i].kp1_match->trainIdx];
+        cv::KeyPoint *kp2 = &kptsCurr[pairs[i].kp2_match->trainIdx];
+
+        double d1 = euclidean_distance(*kp1, *kp2);
+
+        //cout << "d0, d1, d1/d0: " << d0 << ", " << d1 << " ," << d1/d0 << endl;
+        d_quotient.push_back(d1/d0);
+
+    }
+
+    double median_d = d_quotient[d_quotient.size()/2];
+    double mean_d = accumulate(d_quotient.begin(), d_quotient.end(), 0.0) / d_quotient.size();
+    double stddev_d = accumulate(d_quotient.begin(), d_quotient.end(), 0.0, 
+                                    [mean_d](double val, double d) {
+                                        return pow(d-mean_d, 2);
+                                    });
+    stddev_d = sqrt(stddev_d / d_quotient.size());
+
+    cout << ">mean_d: " << mean_d << endl;
+    cout << ">stddev_d: " << stddev_d << endl;
+    cout << ">median_d: " << median_d << endl;
+
+    vector<double> d_q;
+    for (auto val : d_quotient) {
+        if (fabs(val-mean_d) > stddev_d * 2.0) {
+            d_q.push_back(val);        
+        }
+    }
+
+
+
+
+
+
+
+    double d_t = 1.0/frameRate;
+    double quotient = accumulate(d_q.begin(), d_q.end(), 0.0) / d_q.size();
+    //quotient = mean_d;
+    TTC = -d_t / (1 - quotient);
+
+    cout << "TTC: " << TTC << endl;
+    
+
+
 }
 
 
