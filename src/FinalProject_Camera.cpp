@@ -179,7 +179,7 @@ int main(int argc, const char *argv[])
         bool bLimitKpts = properties::use_matches_max_count;
         if (bLimitKpts)
         {
-            int maxKeypoints = properties::matches_max_count;;
+            int maxKeypoints = properties::matches_max_count;
 
             // if (detectorType.compare("SHITOMASI") == 0)
             // { // there is no response info, so keep the first 50 as they are sorted in descending quality order

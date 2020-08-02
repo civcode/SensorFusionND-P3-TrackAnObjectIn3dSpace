@@ -148,7 +148,7 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
     //cv::DMatch.trainIdx ... kptsCurr 
     //boundingBox .. current image bounding box
 
-    cout << "kptMatches.size(): " << kptMatches.size() << endl;
+    //cout << "kptMatches.size(): " << kptMatches.size() << endl;
 
     // auto euclideanDistance = [](const cv::KeyPoint &p1, const cv::KeyPoint &p2) -> double {
     //     return sqrt(pow(p1.pt.x-p2.pt.x,2) + pow(p1.pt.y-p2.pt.y,2));
@@ -187,11 +187,12 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
             //double d = euclideanDistance(*curr_pt, *prev_pt);
             double d = cv::norm(curr_pt->pt - prev_pt->pt);
             //cout << "d: " << d << endl;
-            if (d > 1e-6) {
+            if (d > numeric_limits<double>::epsilon()) {
                 kp_distance.push_back(d);
                 candidates_curr.push_back(curr_pt);
                 candidates_prev.push_back(prev_pt);
                 kp_matches.insert(pair<int,int>(match.queryIdx, match.trainIdx));
+                boundingBoxCurr.kptMatches.push_back(match);
             }
 
             // cout << "curr_pt [x, y]: [" << curr_pt->pt.x << ", " << curr_pt->pt.y << "]" << endl;
@@ -205,10 +206,11 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
         // if (cnt++ > 10)
         //     break;
     }
+    //return;
     //cout << "boundingBox.keypoints.size(): " << boundingBox.keypoints.size() << endl;
     //cout << "candidates_curr.size(): " << candidates_curr.size() << endl;
     //cout << "candidates_prev.size(): " << candidates_prev.size() << endl;
-    cout << "kp_matches.size(): " << kp_matches.size() << endl;
+    //cout << "kp_matches.size(): " << kp_matches.size() << endl;
 
     //candidates_curr[0].pt.
 
@@ -223,9 +225,9 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
                                     });
     stddev_d = sqrt(stddev_d / kp_distance.size());
 
-    cout << "mean_d: " << mean_d << endl;
-    cout << "stddev_d: " << stddev_d << endl;
-    cout << "*median_d: " << median_d << endl;
+    // cout << "mean_d: " << mean_d << endl;
+    // cout << "stddev_d: " << stddev_d << endl;
+    // cout << "*median_d: " << median_d << endl;
 
     // for (auto it=kp_distance.begin(); it!=kp_distance.end(); ++it) {
 
@@ -234,8 +236,8 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
         //cout << "kp_distance: " << kp_distance[i] << endl;
         //if (kp_distance[i] < stddev_d * 20.0) {
         //if (kp_distance[i] < mean_d * 1.5) {
-        if (kp_distance[i] < median_d * 2.5) {
-        //if (true) {
+        //if (kp_distance[i] < median_d * 2.5) {
+        if (true) {
             //kptsPrev.push_back(*candidates_prev[i]);
             //kptsCurr.push_back(*candidates_curr[i]);
             cv::DMatch dm;
@@ -250,8 +252,8 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
 
         }
     }
-    cout << "boundingBoxCurr.keypoints.size(): " << boundingBoxCurr.keypoints.size() << endl;
-    cout << "boundingBoxCurr.kptMatches.size(): " << boundingBoxCurr.kptMatches.size() << endl;
+    //cout << "boundingBoxCurr.keypoints.size(): " << boundingBoxCurr.keypoints.size() << endl;
+    //cout << "boundingBoxCurr.kptMatches.size(): " << boundingBoxCurr.kptMatches.size() << endl;
     //kptMatches[0].
 
     //cout << "kptsPrev.size(): " << kptsPrev.size() << endl;
@@ -336,9 +338,9 @@ void computeTTCCamera_old(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::K
                                     });
     stddev_d = sqrt(stddev_d / d_quotient.size());
 
-    cout << ">mean_d: " << mean_d << endl;
-    cout << ">stddev_d: " << stddev_d << endl;
-    cout << ">median_d: " << median_d << endl;
+    // cout << ">mean_d: " << mean_d << endl;
+    // cout << ">stddev_d: " << stddev_d << endl;
+    // cout << ">median_d: " << median_d << endl;
 
     vector<double> d_q;
     for (auto val : d_quotient) {
@@ -406,10 +408,11 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 
     double dT = 1 / frameRate;
     TTC = -dT / (1 - medDistRatio);
-    // EOF STUDENT TASK
+    
+    cout << "TTC Camera: " << TTC << endl;
 }
 
-void getValidLidarPoints(std::vector<LidarPoint> &lidarPoints, double rmin, int kn) {
+void removeLidarOutliers(std::vector<LidarPoint> &lidarPoints, double rmin, int kn) {
 
     auto getStatisticalParameters = []( vector<LidarPoint> &lidar_points, double &sum_x, double &mean_x, double stddev_x, int kn) {
         assert(kn < lidar_points.size());
@@ -434,10 +437,10 @@ void getValidLidarPoints(std::vector<LidarPoint> &lidarPoints, double rmin, int 
     bool is_valid_point = false;
     while (!is_valid_point) {
        
-        getStatisticalParameters(lidarPointsPrev, sum_x, mean_x, stddev_x, kn);
+        getStatisticalParameters(lidarPoints, sum_x, mean_x, stddev_x, kn);
 
-        if (fabs(lidarPointsPrev[0].x - lidarPointsPrev[1].x) > stddev_x * 1.0 || lidarPointsPrev[0].r < rmin) {
-            lidarPointsPrev.erase(lidarPointsPrev.begin());
+        if (fabs(lidarPoints[0].x - lidarPoints[1].x) > stddev_x * 1.0 || lidarPoints[0].r < rmin) {
+            lidarPoints.erase(lidarPoints.begin());
         } else {
             is_valid_point = true;
         }
@@ -450,183 +453,35 @@ void getValidLidarPoints(std::vector<LidarPoint> &lidarPoints, double rmin, int 
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
 {
-    //cout << "lidarPointsPrev.size(): " << lidarPointsPrev.size() << endl;
-    //cout << "lidarPointsCurr.size(): " << lidarPointsCurr.size() << endl;
-    
-    // int cnt = 0;
-    // for (auto elem : lidarPointsPrev) {
-    //     //cout << elem.r << ", ";
-    //     if (elem.r > properties::reflectivity_min)
-    //         cnt++;
-    // }
-    // cout << "cnt: " << cnt << endl;
-    //cout << endl;
-
-    // algorithm
-    // sort lidarPoints by x
-    //      get closest point  
-    //      compute mean and stddev over n nearest points
-    //      if distance to mean is larger than 1 stddev
-    //          reject closest point
-
-    // auto euclidean_distance = [](LidarPoint &p1, LidarPoint &p2) {
-    //     return sqrt(pow(p1.x-p2.x,2) + pow(p1.y-p2.y,2) +pow(p1.z-p2.z,2));
-    // }; 
-
-    auto print_vec = [](vector<LidarPoint> &vec, int n=5) {
-        for (auto it=vec.begin(); it!=vec.end(); ++it) {
-            if (it-vec.begin() >= n)
-                break;
-            cout << it->x << ", " << it->y << ", " << it->z << ", " << it->r << endl;
-            
-        }
-    };
-
-    //print_vec(lidarPointsPrev);
-
-    sort(lidarPointsPrev.begin(), lidarPointsPrev.end(), [](LidarPoint &p1, LidarPoint &p2) -> bool {return p1.x < p2.x;});
-
-    sort(lidarPointsCurr.begin(), lidarPointsCurr.end(), [](LidarPoint &p1, LidarPoint &p2) -> bool {return p1.x < p2.x;});
-
-    //cout << endl;
-    //print_vec(lidarPointsPrev);
-
-    auto getStatisticalParameters = []( vector<LidarPoint> &lidar_points, double &sum_x, double &mean_x, double stddev_x, int kn=10) {
-        if (kn < lidar_points.size()) {
-            sum_x = accumulate(lidar_points.begin(), lidar_points.begin() + kn, 0.0, 
-                [](double val, LidarPoint &pt) -> double {
-                    return val+pt.x;
-                });
-            mean_x = sum_x / kn;
-            stddev_x = accumulate(lidar_points.begin(), lidar_points.begin() + kn, 0.0, 
-                [mean_x](double val, LidarPoint &pt) -> double {
-                    return val + pow(pt.x-mean_x,2);
-                });
-            stddev_x = sqrt(stddev_x/kn);    
-        }
-    };
 
     int kn = 50;
-    double sum_x;
-    double mean_x;
-    double stddev_x;
-    bool is_valid_point = false;
-    int cnt1 = 0;
-    while (!is_valid_point) {
-        
-        // if (kn < lidarPointsPrev.size()) {
-        //     sum_x = accumulate(lidarPointsPrev.begin(), lidarPointsPrev.begin() + kn, 0.0, 
-        //         [](double val, LidarPoint &pt) -> double {
-        //             return val+pt.x;
-        //         });
-        //     mean_x = sum_x / kn;
-        //     stddev_x = accumulate(lidarPointsPrev.begin(), lidarPointsPrev.begin() + kn, 0.0, 
-        //         [mean_x](double val, LidarPoint &pt) -> double {
-        //             return val + pow(pt.x-mean_x,2);
-        //         });
-        //     stddev_x = sqrt(stddev_x/kn);    
-        // }
+    removeLidarOutliers(lidarPointsPrev, properties::reflectivity_min, kn);
+    removeLidarOutliers(lidarPointsCurr, properties::reflectivity_min, kn);
 
-        getStatisticalParameters(lidarPointsPrev, sum_x, mean_x, stddev_x, kn);
+    double x_min_prev;
+    double x_min_curr;
 
-        // cout << "sum_x: " << sum_x << endl;
-        // cout << "mean_x: " << mean_x << endl;
-        // cout << "stddev_x: " << stddev_x << endl;
-        // cout << "stddev_p: " << stddev_x * 3.0 << endl;
-        // //cout << "delta: " << fabs(lidarPointsPrev[0].x-mean_x) << endl;
-        // cout << "delta: " << fabs(lidarPointsPrev[0].x - lidarPointsPrev[1].x) << endl;
-      
-        //if (fabs(lidarPointsPrev[0].x - mean_x) > stddev_x * 3.0) {
-        if (fabs(lidarPointsPrev[0].x - lidarPointsPrev[1].x) > stddev_x * 1.0 || lidarPointsPrev[0].r < properties::reflectivity_min) {
-            lidarPointsPrev.erase(lidarPointsPrev.begin());
-            cout << "erased first element\n";
-            //cout << endl;
-            //print_vec(lidarPointsPrev);
-        } else {
-            is_valid_point = true;
-        }
-    }
-   // cout << endl;
+    //x_min_prev = lidarPointsPrev[kn/2].x;
+    //x_min_curr = lidarPointsCurr[kn/2].x;
+    x_min_prev = lidarPointsPrev[0].x;
+    x_min_curr = lidarPointsCurr[0].x;
 
-    is_valid_point = false;
-    while (!is_valid_point) {
-        
-        // if (kn < lidarPointsCurr.size()) {
-        //     sum_x = accumulate(lidarPointsCurr.begin(), lidarPointsCurr.begin() + kn, 0.0, 
-        //         [](double val, LidarPoint &pt) -> double {
-        //             return val+pt.x;
-        //         });
-        //     mean_x = sum_x / kn;
-        //     stddev_x = accumulate(lidarPointsCurr.begin(), lidarPointsCurr.begin() + kn, 0.0, 
-        //         [mean_x](double val, LidarPoint &pt) -> double {
-        //             return val + pow(pt.x-mean_x,2);
-        //         });
-        //     stddev_x = sqrt(stddev_x/kn); 
-        // }
-
-        getStatisticalParameters(lidarPointsCurr, sum_x, mean_x, stddev_x, kn);
-
-        // cout << "sum_x: " << sum_x << endl;
-        // cout << "mean_x: " << mean_x << endl;
-        // cout << "stddev_x: " << stddev_x << endl;
-        // cout << "stddev_p: " << stddev_x * 3.0 << endl;
-        // //cout << "delta: " << fabs(lidarPointsPrev[0].x-mean_x) << endl;
-        // cout << "delta: " << fabs(lidarPointsCurr[0].x - lidarPointsCurr[1].x) << endl;
-
-        //if (fabs(lidarPointsPrev[0].x - mean_x) > stddev_x * 3.0) {
-        if (fabs(lidarPointsCurr[0].x - lidarPointsCurr[1].x) > stddev_x * 1.0 || lidarPointsPrev[0].r < properties::reflectivity_min) {
-            lidarPointsCurr.erase(lidarPointsCurr.begin());
-            cout << "erased first element\n";
-            //cout << endl;
-            //print_vec(lidarPointsCurr);
-        } else {
-            is_valid_point = true;
-        }
-    }
-    //cout << endl;
-    //double x_min_prev = lidarPointsPrev[0].x;
-    //double x_min_curr = lidarPointsCurr[0].x;
-    double x_min_prev = 0.0;
-    double x_min_curr = 0.0;
-
-    // // calculate mean
-    // for (int i=0; i<kn; i++) {
-    //     x_min_prev += lidarPointsPrev[i].x;
-    //     x_min_curr += lidarPointsCurr[i].x;
-    // }
-    // x_min_prev /= kn;
-    // x_min_curr /= kn;
-    
-    // calculate mean
-    // x_min_prev = accumulate(lidarPointsPrev.begin(), lidarPointsPrev.end(), 0.0, [](double val, LidarPoint &pt){return val+pt.x;})/lidarPointsPrev.size();
-    // x_min_curr = accumulate(lidarPointsCurr.begin(), lidarPointsCurr.end(), 0.0, [](double val, LidarPoint &pt){return val+pt.x;})/lidarPointsCurr.size();;
-
-    // get median => much better results!
-    //x_min_prev = lidarPointsPrev[lidarPointsPrev.size()/2].x;
-    //x_min_curr = lidarPointsCurr[lidarPointsCurr.size()/2].x;
-    x_min_prev = lidarPointsPrev[kn/2].x;
-    x_min_curr = lidarPointsCurr[kn/2].x;
+    // long medIndex = floor(distRatios.size() / 2.0);
+    // double medDistRatio = distRatios.size() % 2 == 0 ? (distRatios[medIndex - 1] + distRatios[medIndex]) / 2.0 : distRatios[medIndex]; // compute median dist. ratio to remove outlier influence
 
 
-    cout << "x_min_prev: " << x_min_prev << endl;
-    cout << "x_min_curr: " << x_min_curr << endl;
-    cout << "x_min_delta: " << x_min_prev-x_min_curr << endl;
+    double dT = 1.0/frameRate;
 
-  
-    double d_t = 1.0/frameRate;
+    TTC = x_min_curr * dT / (x_min_prev - x_min_curr);
 
-    TTC = x_min_curr * d_t / (x_min_prev - x_min_curr);
-
-    cout << "TTC: " << TTC << endl;
+    cout << "TTC Lidar: " << TTC << endl;
 }
 
 
 void matchBoundingBoxes(std::vector<cv::DMatch> &matches, std::map<int, int> &bbBestMatches, DataFrame &prevFrame, DataFrame &currFrame)
 {
     bool use_graphical_output = false;
-    // for (auto match : matches) {
-    //     cout << "[query, train]: [" << match.queryIdx << ", " << match.trainIdx << "]" << endl; 
-    // }
+
 
     // algorithm
     // over all roi in prevFrame
@@ -721,9 +576,9 @@ void matchBoundingBoxes(std::vector<cv::DMatch> &matches, std::map<int, int> &bb
 
     }
 
-    for (auto elem : bbBestMatches) {
-        cout << "[prev_idx, curr_idx] " << "[" << elem.first << ", " << elem.second << "]\n"; 
-    }
+    // for (auto elem : bbBestMatches) {
+    //     cout << "[prev_idx, curr_idx] " << "[" << elem.first << ", " << elem.second << "]\n"; 
+    // }
     
     
     

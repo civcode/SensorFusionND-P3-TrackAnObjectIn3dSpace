@@ -21,6 +21,6 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC);       
 
 /* My helper functions */
-void getValidLidarPoints(std::vector<LidarPoint> &lidarPoints, double rmin, int kn);  
+void removeLidarOutliers(std::vector<LidarPoint> &lidarPoints, double rmin, int kn);  
 
 #endif /* camFusion_hpp */
