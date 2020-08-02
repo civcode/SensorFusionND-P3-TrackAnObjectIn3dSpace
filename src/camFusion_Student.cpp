@@ -150,9 +150,9 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
 
     cout << "kptMatches.size(): " << kptMatches.size() << endl;
 
-    auto euclideanDistance = [](const cv::KeyPoint &p1, const cv::KeyPoint &p2) -> double {
-        return sqrt(pow(p1.pt.x-p2.pt.x,2) + pow(p1.pt.y-p2.pt.y,2));
-    };
+    // auto euclideanDistance = [](const cv::KeyPoint &p1, const cv::KeyPoint &p2) -> double {
+    //     return sqrt(pow(p1.pt.x-p2.pt.x,2) + pow(p1.pt.y-p2.pt.y,2));
+    // };
 
     //kptMatches[0].
     int cnt = 0;
@@ -165,26 +165,27 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
         cv::KeyPoint *prev_pt =  &kptsPrev[match.queryIdx];
 
         //reduce bounding box size to reduce number of outliers
-        cv::Rect roi_curr;
-        cv::Rect roi_prev;
-        double f = 0.8;
-        roi_curr.width = boundingBoxCurr.roi.width * f;
-        roi_curr.height = boundingBoxCurr.roi.height * f;
-        roi_curr.x = boundingBoxCurr.roi.x + (boundingBoxCurr.roi.width - roi_curr.width) / 2;
-        roi_curr.y = boundingBoxCurr.roi.y + (boundingBoxCurr.roi.height - roi_curr.height) / 2;
+        // cv::Rect roi_curr;
+        // cv::Rect roi_prev;
+        // double f = 1.0; //0.85;
+        // roi_curr.width = boundingBoxCurr.roi.width * f;
+        // roi_curr.height = boundingBoxCurr.roi.height * f;
+        // roi_curr.x = boundingBoxCurr.roi.x + (boundingBoxCurr.roi.width - roi_curr.width) / 2;
+        // roi_curr.y = boundingBoxCurr.roi.y + (boundingBoxCurr.roi.height - roi_curr.height) / 2;
 
-        roi_prev.width = boundingBoxPrev.roi.width * f;
-        roi_prev.height = boundingBoxPrev.roi.height * f;
-        roi_prev.x = boundingBoxPrev.roi.x + (boundingBoxPrev.roi.width - roi_prev.width) / 2;
-        roi_prev.y = boundingBoxPrev.roi.y + (boundingBoxPrev.roi.height - roi_prev.height) / 2;
+        // roi_prev.width = boundingBoxPrev.roi.width * f;
+        // roi_prev.height = boundingBoxPrev.roi.height * f;
+        // roi_prev.x = boundingBoxPrev.roi.x + (boundingBoxPrev.roi.width - roi_prev.width) / 2;
+        // roi_prev.y = boundingBoxPrev.roi.y + (boundingBoxPrev.roi.height - roi_prev.height) / 2;
 
 
-        // if (boundingBoxCurr.roi.contains(curr_pt->pt) && 
-        //     boundingBoxPrev.roi.contains(prev_pt->pt) ) { //checking both BB => much better results
-        if (roi_curr.contains(curr_pt->pt) && 
-            roi_prev.contains(prev_pt->pt) ) { //checking both BB => much better results
+        if (boundingBoxCurr.roi.contains(curr_pt->pt) && 
+            boundingBoxPrev.roi.contains(prev_pt->pt) ) { //checking both BB => much better results
+        // if (roi_curr.contains(curr_pt->pt) && 
+        //     roi_prev.contains(prev_pt->pt) ) { //checking both BB => much better results
             //cout << "here\n";
-            double d = euclideanDistance(*curr_pt, *prev_pt);
+            //double d = euclideanDistance(*curr_pt, *prev_pt);
+            double d = cv::norm(curr_pt->pt - prev_pt->pt);
             //cout << "d: " << d << endl;
             if (d > 1e-6) {
                 kp_distance.push_back(d);
@@ -265,7 +266,7 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBoxPrev, BoundingBox &boundin
 
 
 // Compute time-to-collision (TTC) based on keypoint correspondences in successive images
-void computeTTCCamera-old(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, 
+void computeTTCCamera_old(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, 
                       std::vector<cv::DMatch> kptMatches, double frameRate, double &TTC, cv::Mat *visImg)
 {
     // 1. randomly pick keypoints and compute distance
@@ -273,9 +274,9 @@ void computeTTCCamera-old(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::K
     // 3. compyte quotient
     // 4. compute TTC
 
-    auto euclidean_distance = [](cv::KeyPoint &p1, cv::KeyPoint &p2) {
-        return sqrt(pow(p1.pt.x-p2.pt.x,2) + pow(p1.pt.y-p2.pt.y,2));
-    };
+    // auto euclidean_distance = [](cv::KeyPoint &p1, cv::KeyPoint &p2) {
+    //     return sqrt(pow(p1.pt.x-p2.pt.x,2) + pow(p1.pt.y-p2.pt.y,2));
+    // };
     
     typedef struct kp_pair_ {
         cv::DMatch *kp1_match;
@@ -297,7 +298,8 @@ void computeTTCCamera-old(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::K
         cv::KeyPoint *kp1 = &kptsPrev[kp1_match->queryIdx];
         cv::KeyPoint *kp2 = &kptsPrev[kp2_match->queryIdx];
 
-        double d = euclidean_distance(*kp1, *kp2);
+        //double d = euclidean_distance(*kp1, *kp2);
+        double d = cv::norm(kp1->pt - kp2->pt);
         //cout << "d: " << d << endl;
         if (d > 1e-2) {
             pairs.push_back({kp1_match, kp2_match, kp1, kp2, d});
@@ -319,8 +321,8 @@ void computeTTCCamera-old(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::K
         cv::KeyPoint *kp1 = &kptsCurr[pairs[i].kp1_match->trainIdx];
         cv::KeyPoint *kp2 = &kptsCurr[pairs[i].kp2_match->trainIdx];
 
-        double d1 = euclidean_distance(*kp1, *kp2);
-
+        //double d1 = euclidean_distance(*kp1, *kp2);
+        double d1 = cv::norm(kp1->pt - kp2->pt);
         //cout << "d0, d1, d1/d0: " << d0 << ", " << d1 << " ," << d1/d0 << endl;
         d_quotient.push_back(d1/d0);
 
@@ -406,6 +408,43 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
     TTC = -dT / (1 - medDistRatio);
     // EOF STUDENT TASK
 }
+
+void getValidLidarPoints(std::vector<LidarPoint> &lidarPoints, double rmin, int kn) {
+
+    auto getStatisticalParameters = []( vector<LidarPoint> &lidar_points, double &sum_x, double &mean_x, double stddev_x, int kn) {
+        assert(kn < lidar_points.size());
+        sum_x = accumulate(lidar_points.begin(), lidar_points.begin() + kn, 0.0, 
+            [](double val, LidarPoint &pt) -> double {
+                return val+pt.x;
+            });
+        mean_x = sum_x / kn;
+        stddev_x = accumulate(lidar_points.begin(), lidar_points.begin() + kn, 0.0, 
+            [mean_x](double val, LidarPoint &pt) -> double {
+                return val + pow(pt.x-mean_x,2);
+            });
+        stddev_x = sqrt(stddev_x/kn);    
+
+    };
+
+    sort(lidarPoints.begin(), lidarPoints.end(), [](LidarPoint &p1, LidarPoint &p2) -> bool {return p1.x < p2.x;});
+
+    double sum_x;
+    double mean_x;
+    double stddev_x;
+    bool is_valid_point = false;
+    while (!is_valid_point) {
+       
+        getStatisticalParameters(lidarPointsPrev, sum_x, mean_x, stddev_x, kn);
+
+        if (fabs(lidarPointsPrev[0].x - lidarPointsPrev[1].x) > stddev_x * 1.0 || lidarPointsPrev[0].r < rmin) {
+            lidarPointsPrev.erase(lidarPointsPrev.begin());
+        } else {
+            is_valid_point = true;
+        }
+    }
+
+}
+
 
 
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
