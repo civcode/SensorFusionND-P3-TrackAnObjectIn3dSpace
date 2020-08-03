@@ -109,11 +109,11 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
         // augment object with some key data
         char str1[200], str2[200];
         sprintf(str1, "id=%d, #pts=%d", it1->boxID, (int)it1->lidarPoints.size());
-        putText(topviewImg, str1, cv::Point2f(left-250, bottom+50), cv::FONT_ITALIC, 2, currColor, 3);
-        //putText(topviewImg, str1, cv::Point2f(left-250, 50), cv::FONT_ITALIC, 2, currColor, 3);
+        //putText(topviewImg, str1, cv::Point2f(left-250, bottom+50), cv::FONT_ITALIC, 2, currColor, 3);
+        putText(topviewImg, str1, cv::Point2f(left-250, bottom+80), cv::FONT_ITALIC, 2, currColor, 3);
         sprintf(str2, "xw_min=%2.2fm, yw_mean=%2.2fm", xwmin, ywmax-ywmin);
-        putText(topviewImg, str2, cv::Point2f(left-250, bottom+125), cv::FONT_ITALIC, 2, currColor, 3); 
-        //putText(topviewImg, str2, cv::Point2f(left-250, 125), cv::FONT_ITALIC, 2, currColor, 3);   
+        //putText(topviewImg, str2, cv::Point2f(left-250, bottom+125), cv::FONT_ITALIC, 2, currColor, 3); 
+        putText(topviewImg, str2, cv::Point2f(left-250, bottom+155), cv::FONT_ITALIC, 2, currColor, 3);   
     }
 
     // plot distance markers
@@ -128,9 +128,15 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
     // display image
     string windowName = "3D Objects";
     cv::namedWindow(windowName, 0);
-    cv::resizeWindow(windowName, 800, 600);
-    cv::moveWindow(windowName, 50, 50);
+    cv::resizeWindow(windowName, 800, 800);
+    //cv::moveWindow(windowName, 50, 50);
+    cv::moveWindow(windowName, 800, 400);
     cv::imshow(windowName, topviewImg);
+
+    //write image for evaluation
+    // char file_name[200], str2[200];
+    // sprintf(file_name, "../evaluation/lidar_frame_%.2d.png", properties::current_frame_index);
+    // cv::imwrite(file_name, topviewImg);
 
     if(bWait)
     {
@@ -379,15 +385,44 @@ void removeLidarOutliers(std::vector<LidarPoint> &lidarPoints, double rmin, int 
 
     sort(lidarPoints.begin(), lidarPoints.end(), [](LidarPoint &p1, LidarPoint &p2) -> bool {return p1.x < p2.x;});
 
-    double sum_x;
-    double mean_x;
-    double stddev_x;
+    //compute delta_x between two points
+    vector<double> dx;
+    assert(lidarPoints.size() >= kn+1);
+    for (int i=0; i<kn; i++) {
+        double d = fabs(lidarPoints[i+1].x-lidarPoints[i].x);
+        if (d > numeric_limits<double>::epsilon())
+            dx.push_back(d);
+    }
+    sort(dx.begin(), dx.end());
+    // for (double d : dx) {
+    //     cout << "dx: " << d << endl;
+    // }
+    // cout << endl;
+    //return;
+
+
+    // double sum_x;
+    // double mean_x;
+    // double stddev_x;
+    // bool is_valid_point = false;
+    // while (!is_valid_point) {
+       
+    //     getStatisticalParameters(lidarPoints, sum_x, mean_x, stddev_x, kn);
+
+    //     if (fabs(lidarPoints[0].x - lidarPoints[1].x) > stddev_x * 1.0 || lidarPoints[0].r < rmin) {
+    //         lidarPoints.erase(lidarPoints.begin());
+    //     } else {
+    //         is_valid_point = true;
+    //     }
+    // }
+
+    double median_dx = dx[dx.size()/2];
     bool is_valid_point = false;
     while (!is_valid_point) {
        
-        getStatisticalParameters(lidarPoints, sum_x, mean_x, stddev_x, kn);
+        //getStatisticalParameters(lidarPoints, sum_x, mean_x, stddev_x, kn);
 
-        if (fabs(lidarPoints[0].x - lidarPoints[1].x) > stddev_x * 1.0 || lidarPoints[0].r < rmin) {
+        if (fabs(lidarPoints[0].x - lidarPoints[1].x) > median_dx || lidarPoints[0].r < rmin) {
             lidarPoints.erase(lidarPoints.begin());
         } else {
             is_valid_point = true;
@@ -402,7 +437,7 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
 {
 
-    int kn = 50;
+    int kn = 100;//50;
     removeLidarOutliers(lidarPointsPrev, properties::reflectivity_min, kn);
     removeLidarOutliers(lidarPointsCurr, properties::reflectivity_min, kn);
 
@@ -413,6 +448,11 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
     //x_min_curr = lidarPointsCurr[kn/2].x;
     x_min_prev = lidarPointsPrev[0].x;
     x_min_curr = lidarPointsCurr[0].x;
+
+    cout << "x_min_prev: " << x_min_prev << endl;
+    cout << "x_min_curr: " << x_min_curr << endl;
+    cout << "diff      : " << x_min_prev - x_min_curr << endl;
+
 
     // long medIndex = floor(distRatios.size() / 2.0);
     // double medDistRatio = distRatios.size() % 2 == 0 ? (distRatios[medIndex - 1] + distRatios[medIndex]) / 2.0 : distRatios[medIndex]; // compute median dist. ratio to remove outlier influence

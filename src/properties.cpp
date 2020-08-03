@@ -120,7 +120,14 @@ void printEvalData() {
             des_time.push_back(frame.descriptor_time);
             match_time.push_back(frame.matcher_time);
 
-            ttc_camera.push_back(frame.ttc_camera);
+            
+            if (!isnan(frame.ttc_camera) && !isinf(frame.ttc_camera))
+                ttc_camera.push_back(frame.ttc_camera);
+            else {
+                ttc_camera.push_back(0.0);
+                cout << "***IsNAN!!!" << endl;
+            }
+            
             ttc_lidar.push_back(frame.ttc_lidar);
 
             kp_roi_count.push_back(frame.kp_roi_count);
