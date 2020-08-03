@@ -422,7 +422,7 @@ void removeLidarOutliers(std::vector<LidarPoint> &lidarPoints, double rmin, int 
        
         //getStatisticalParameters(lidarPoints, sum_x, mean_x, stddev_x, kn);
 
-        if (fabs(lidarPoints[0].x - lidarPoints[1].x) > median_dx || lidarPoints[0].r < rmin) {
+        if (fabs(lidarPoints[0].x - lidarPoints[1].x) > median_dx *2.0 || lidarPoints[0].r < rmin) {
             lidarPoints.erase(lidarPoints.begin());
         } else {
             is_valid_point = true;

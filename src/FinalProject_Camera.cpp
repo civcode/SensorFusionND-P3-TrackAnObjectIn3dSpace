@@ -308,9 +308,9 @@ int main(int argc, const char *argv[])
                         for (int i=0; i<currBB->kptMatches.size(); i++) {
                             cv::KeyPoint *kp_prev = &(dataBuffer.end() - 2)->keypoints[currBB->kptMatches[i].queryIdx];
                             cv::KeyPoint *kp_curr = &(dataBuffer.end() - 1)->keypoints[currBB->kptMatches[i].trainIdx];
-                            cv::circle(visImg, kp_prev->pt, 4, cv::Scalar(255,0,255,1), 2);   
-                            cv::circle(visImg, kp_curr->pt, 4, cv::Scalar(255,255,0,1), 2); 
-                            cv::line(visImg, kp_prev->pt, kp_curr->pt, cv::Scalar(0,0,255,1), 2);    
+                           //cv::circle(visImg, kp_prev->pt, 4, cv::Scalar(255,0,255,1), 2);   
+                            cv::circle(visImg, kp_curr->pt, 2, cv::Scalar(255,255,0,1), 2); 
+                            //cv::line(visImg, kp_prev->pt, kp_curr->pt, cv::Scalar(0,0,255,1), 2);    
 
                         }
 
@@ -327,6 +327,11 @@ int main(int argc, const char *argv[])
                         cv::imshow(windowName, visImg);
                         cout << "Press key to continue to next frame" << endl;
                         cv::waitKey(10);
+
+                        //write image for evaluation
+                        char file_name[200], str2[200];
+                        sprintf(file_name, "../evaluation/camera_frame_%.2d.png", properties::current_frame_index);
+                        cv::imwrite(file_name, visImg);
                     }
                     bVis = false;
 

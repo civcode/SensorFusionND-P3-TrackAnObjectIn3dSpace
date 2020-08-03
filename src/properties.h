@@ -22,7 +22,7 @@ const bool use_matches_max_count = false;
 const int matches_max_count = 200;
 
 const bool use_lidar_visualizeion = false;
-const bool use_camera_visualization = false;
+const bool use_camera_visualization =true;
 
 // Lidar TTC
 const double lane_width = 4.0;
@@ -33,22 +33,22 @@ const int keypoint_pair_count = 100; //100;
 const int pairs_used_count = 50;
 
 // set feature type
-//const string keypoint_detector_type = "SHITOMASI";
+const string keypoint_detector_type = "SHITOMASI";
 //const string keypoint_detector_type = "HARRIS";
 //const string keypoint_detector_type = "BRISK";
 //const string keypoint_detector_type = "ORB";
 //const string keypoint_detector_type = "SIFT";
 //const string keypoint_detector_type = "SURF"; // not part of assignment
-const string keypoint_detector_type = "AKAZE";
+//const string keypoint_detector_type = "AKAZE";
 
 // set descriptor type
 ////const string feature_descriptor_type =  "BRISK";    //binary
 //const string feature_descriptor_type =  "BRIEF";  //binary
-//const string feature_descriptor_type =  "ORB";    //binary
+const string feature_descriptor_type =  "ORB";    //binary
 //const string feature_descriptor_type =  "FREAK";  //binary
 //const string feature_descriptor_type =  "SIFT";   //HOG
 //const string feature_descriptor_type =  "SURF";   //HOG not part of assignment
-const string feature_descriptor_type =  "AKAZE";  //binary
+//const string feature_descriptor_type =  "AKAZE";  //binary
 
 // set matcher type
 const bool use_matcher_cross_check = false; // true causes error
