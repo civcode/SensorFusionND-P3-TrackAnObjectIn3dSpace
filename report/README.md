@@ -143,24 +143,37 @@ The following images show the estimates of Camera-based TTC for different featur
 
 ##### AKAZE
 The estimate is very consistent and looks plausible.
+
 ![][img04]
+
 ##### BRISK
 Relatively consitsent estimates with all available feature matchers.
+
 ![][img05]
+
 ##### HARRIS
 The Harris keypoint detector lead to very incosistent estimates. This is probaly due to the low number of detected features which cause the camera-based method to fail.
+
 ![][img06]
+
 ##### ORB
 In the first half of the image sequence incosistent, especially in combination with Brisk, Freak and SURF descriptor.
+
 ![][img07]
+
 ##### SHITOMASI
 Very consistent except in combination with the SURF descriptor.
+
 ![][img08]
+
 ##### SIFT
 Relatively consistent results with all available descriptors.
+
 ![][img09]
+
 ##### SURF
 The SURF keypoint detector leads to the most consistent estimates no matter which descriptor is used.
+
 ![][img10]
 
 #### 6.2 Statistical Evaluation
