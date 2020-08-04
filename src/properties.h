@@ -22,7 +22,7 @@ const bool use_matches_max_count = false;
 const int matches_max_count = 200;
 
 const bool use_lidar_visualizeion = false;
-const bool use_camera_visualization =true;
+const bool use_camera_visualization = true;
 
 // Lidar TTC
 const double lane_width = 4.0;
