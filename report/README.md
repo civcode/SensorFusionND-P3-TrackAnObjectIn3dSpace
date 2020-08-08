@@ -223,7 +223,7 @@ The standard deviation of the TTC is probably the most meaningful statistical in
 
 ## Final Thoughts
 
-Considering the good consistency of AKAZE and the SURF feature detector which can observed in the graphical illustration as well as the standard deviation of the results i would choose one of these two if enough computational power is available.
+Considering the good consistency of the AKAZE and the SURF feature detector, which can be observed in the graphical illustration, as well as the standard deviation of the results i would choose one of these two if enough computational power is available.
 
 - AKAZE - AKAZE
 - SURF - SURF
@@ -234,7 +234,7 @@ Considering the good consistency of AKAZE and the SURF feature detector which ca
 
 In cases where computational power is restricted i would use one of these combinations (which are 4 to 10 times faster):
 
-- Shitomasi + OFB
+- Shitomasi + ORB
 - BRISK + ORB
 - ORB + BRIEF
 
