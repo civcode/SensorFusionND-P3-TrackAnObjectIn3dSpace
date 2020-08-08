@@ -121,13 +121,13 @@ In section the results of the TTC estimation are illustrated with graphs compari
 
 ##### 6.1.1 Number of Keypoints
 
-The following image shows the number of keypoints detected within the bounding box for different detecting methods. It should be noted that the Harris detector is relatively incosistent over frames and only find a very low number of keypoints.
+The following image shows the number of keypoints detected within the bounding box for different detecting methods. It should be noted that the Harris detector is relatively incosistent over frames and only finds a very low number of keypoints.
 
 ![][img01]
 
 ##### 6.1.2 Number of Keypoint Matches
 
-The following image shows the average number of keypoint matches  within the bounding box for different descriptor methods. It should be noted that the Harris detector is relatively incosistent over frames and only find a very low number of keypoints.
+The following image shows the average number of keypoint matches  within the bounding box for different descriptor methods. 
 
 ![][img02]
 
