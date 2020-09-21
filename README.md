@@ -25,6 +25,11 @@ In this final project, you will implement the missing parts in the schematic. To
   * Mac: same deal as make - [install Xcode command line tools](https://developer.apple.com/xcode/features/)
   * Windows: recommend using [MinGW](http://www.mingw.org/)
 
+## OpenCV 4.4.0
+* SIFT was moved from non-free to the main repository 
+  * 4.3.0 and earlier: cv::xfeatures2d::SIFT::create();
+  * 4.4.0 and above:   cv::SIFT::create();
+  
 ## External Data
 Download the file <a href="https://pjreddie.com/media/files/yolov3.weights"
 target="_blank">yolov3.weights</a> to ./dat/yolo/ (236 MB).
